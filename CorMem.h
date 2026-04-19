@@ -1,6 +1,7 @@
 #pragma once
 
 #include <windows.h>
+#include <string>
 
 constexpr ULONG IOCTL_MAP	= 0x22200Cu;
 constexpr ULONG IOCTL_UNMAP = 0x222010u;
@@ -9,9 +10,9 @@ constexpr ULONG IOCTL_V2P	= 0x22201Cu;
 class CorMem
 {
 public:
-	CorMem()
+	CorMem(const std::string& deviceName)
 	{
-		m_hCorMem = CreateFileA("\\\\.\\CorMem", 
+		m_hCorMem = CreateFileA(deviceName.c_str(), 
 								GENERIC_READ | GENERIC_WRITE,
 								0, 
 								nullptr, 

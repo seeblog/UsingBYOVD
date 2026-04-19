@@ -27,18 +27,14 @@ CorMem::KernelRead(
 		return FALSE;
 	}
 
-	auto PageOffset = reinterpret_cast<ULONG_PTR>(pPhysicalAddress) & (0x1000 - 1);
-	auto PageBase	= reinterpret_cast<ULONG_PTR>(pPhysicalAddress) & ~(0x1000 - 1);
-	auto MapSize	= (PageOffset + ReadSize + 0x1000 - 1) & ~(0x1000 - 1);
-
-	auto pMappedAddress = MapPhysicalMemory(reinterpret_cast<PVOID>(PageBase), MapSize);
+	auto pMappedAddress = MapPhysicalMemory(pPhysicalAddress, ReadSize);
 	if (!pMappedAddress)
 	{
 		std::cout << "[-] Failed to map physical memory With Read. Error code: " << GetLastError() << std::endl;
 		return FALSE;
 	}
 
-	RtlCopyMemory(ReadBuffer, reinterpret_cast<PVOID>(reinterpret_cast<ULONG_PTR>(pMappedAddress) + PageOffset), ReadSize);
+	RtlCopyMemory(ReadBuffer, pMappedAddress, ReadSize);
 	UnmapPhysicalMemory(pMappedAddress);
 
 	return TRUE;
@@ -63,18 +59,14 @@ CorMem::KernelWrite(
 		return FALSE;
 	}
 
-	auto PageOffset = reinterpret_cast<ULONG_PTR>(pPhysicalAddress) & (0x1000 - 1);
-	auto PageBase	= reinterpret_cast<ULONG_PTR>(pPhysicalAddress) & ~(0x1000 - 1);
-	auto MapSize	= (PageOffset + WriteSize + 0x1000 - 1) & ~(0x1000 - 1);
-
-	auto pMappedAddress = MapPhysicalMemory(reinterpret_cast<PVOID>(PageBase), MapSize);
+	auto pMappedAddress = MapPhysicalMemory(pPhysicalAddress, WriteSize);
 	if (!pMappedAddress)
 	{
 		std::cout << "[-] Failed to map physical memory. Error code: " << GetLastError() << std::endl;
 		return FALSE;
 	}
 
-	RtlCopyMemory(reinterpret_cast<PVOID>(reinterpret_cast<ULONG_PTR>(pMappedAddress) + PageOffset), WriteBuffer, WriteSize);
+	RtlCopyMemory(pMappedAddress, WriteBuffer, WriteSize);
 	UnmapPhysicalMemory(pMappedAddress);
 
 	return TRUE;

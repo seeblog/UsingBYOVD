@@ -129,10 +129,18 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="CorMem.h" />
+    <ClInclude Include="DriverService.hpp" />
+    <ClInclude Include="FileUtils.hpp" />
+    <ClInclude Include="Log.hpp" />
+    <ClInclude Include="Resource.hpp" />
+    <ClInclude Include="Utils.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CorMem.cpp" />
+    <ClCompile Include="DriverService.cpp" />
+    <ClCompile Include="FileUtils.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
