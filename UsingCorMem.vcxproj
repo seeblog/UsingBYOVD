@@ -24,6 +24,7 @@
     <ProjectGuid>{19037D5B-6296-D37D-F1B4-BF5A5F7A764C}</ProjectGuid>
     <RootNamespace>UsingCorMem</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>DriverLoader</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -132,6 +133,7 @@
     <ClInclude Include="DriverService.hpp" />
     <ClInclude Include="FileUtils.hpp" />
     <ClInclude Include="Log.hpp" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="Resource.hpp" />
     <ClInclude Include="Utils.hpp" />
   </ItemGroup>
@@ -141,6 +143,12 @@
     <ClCompile Include="FileUtils.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Utils.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="DriverLoader.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="BinaryEvil.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

