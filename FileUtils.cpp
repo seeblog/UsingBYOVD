@@ -103,8 +103,11 @@ CreateFileFromMemory(
 	if (!outFile.good())
 	{
 		LOG("[-] Failed to write data to file: " << filePath);
+		outFile.close();
 		return false;
 	}
+
+	outFile.close();
 	
 	return true;
 }

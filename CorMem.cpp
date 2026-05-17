@@ -1,5 +1,89 @@
 #include "CorMem.h"
-#include <iostream>
+#include "FileUtils.hpp"
+#include "CorMemBin.hpp"
+#include "Log.hpp"
+
+BOOLEAN CorMem::Initialize() noexcept
+{
+	if (m_bInitialized)
+	{
+		return m_bInitialized;
+	}
+
+	// Create the driver file from the resource data
+	std::string driverFullPath;
+	if (!FileUtils::CreateDriverFile(driverFullPath,
+									 (const char*)CorMemBin::hexData,
+									 CorMemBin::HexDataSize,
+									 CorMemBin::Key))
+	{
+		LOG("[-] CreateDriverFile failed");
+		return FALSE;
+	}
+
+	// Register and start the driver service
+	//std::string strServiceName{ CorMemBin::service };
+	// Get the device name from the resource data
+	std::string serviceName = FileUtils::GetServiceName(CorMemBin::service,
+													   CorMemBin::serviceLength,
+													   CorMemBin::Key);
+	if (serviceName.empty())
+	{
+		return FALSE;
+	}
+
+	m_pDriverService = new DriverService(driverFullPath, serviceName);
+	if (!m_pDriverService)
+	{
+		LOG("[-] Failed to create DriverService instance");
+		return FALSE;
+	}
+
+	if (!NT_SUCCESS(m_pDriverService->RegisterService()))
+	{
+		LOG("[-] Failed to register driver service");
+		return FALSE;
+	}
+
+	// Load the driver
+	if (!NT_SUCCESS(m_pDriverService->LoadDriver()))
+	{
+		LOG("[-] Failed to load driver");
+		return FALSE;
+	}
+
+	// Create Device 
+	std::string deviceName = FileUtils::GetServiceName(CorMemBin::ServiceName,
+													   CorMemBin::ServiceNameSize,
+													   CorMemBin::Key);
+	m_hDevice = CreateDevice(deviceName.c_str());
+
+	if (INVALID_HANDLE_VALUE == m_hDevice)
+	{
+		return FALSE;
+	}
+
+	m_bInitialized = TRUE;
+	return TRUE;
+}
+
+VOID CorMem::Uninitialize()
+{
+	if (m_pDriverService)
+	{
+		m_pDriverService->StopAndUnregister();
+
+		delete m_pDriverService;
+		m_pDriverService = nullptr;
+	}
+
+	if (INVALID_HANDLE_VALUE != m_hDevice)
+	{
+		CloseHandle(m_hDevice);
+		m_hDevice = INVALID_HANDLE_VALUE;
+	}
+	m_bInitialized = FALSE;
+}
 
 BOOLEAN 
 CorMem::KernelRead(
@@ -7,35 +91,81 @@ CorMem::KernelRead(
 	PVOID	ReadBuffer,
 	SIZE_T	ReadSize)
 {
-	if (INVALID_HANDLE_VALUE == m_hCorMem)
+	if (INVALID_HANDLE_VALUE == m_hDevice)
 	{
-		std::cout << "[-] CorMem device is not available." << std::endl;
+		LOG("[-] CorMem device handle is invalid. Ensure the driver is loaded and the device is accessible.");
 		return FALSE;
 	}
 
-	if (!VirtualAddress || !ReadBuffer || !ReadSize)
+	if (!VirtualAddress || !ReadBuffer || !ReadSize || !m_bInitialized)
 	{
-		std::cout << "[-] Invalid parameters for KernelRead." << std::endl;
+		LOG("[-] Invalid parameters for KernelRead.");
 		return FALSE;
 	}
 
-	PVOID pPhysicalAddress = VirtualToPhysical(VirtualAddress);
-	if (!pPhysicalAddress)
+	if (ReadSize <= 0x1000)
 	{
-		// 测试在Windows11 26200 存在错误 
-		std::cout << "[-] Failed to translate virtual address to physical address." << std::endl;
-		return FALSE;
-	}
+		PVOID pPhysicalAddress = this->VirtualToPhysical(VirtualAddress);
+		if (!pPhysicalAddress)
+		{
+			LOG("VirtualToPhysical failed!!!");
+			return FALSE;
+		}
 
-	auto pMappedAddress = MapPhysicalMemory(pPhysicalAddress, ReadSize);
-	if (!pMappedAddress)
+		auto pMappedAddress = MapPhysicalMemory(pPhysicalAddress, ReadSize);
+		if (!pMappedAddress)
+		{
+			LOG("[-] Failed to map physical memory. Error code: %lu" << std::hex << GetLastError() << std::dec);
+			return FALSE;
+		}
+
+		RtlCopyMemory(ReadBuffer, pMappedAddress, ReadSize);
+		UnmapPhysicalMemory(pMappedAddress);
+	}
+	else
 	{
-		std::cout << "[-] Failed to map physical memory With Read. Error code: " << GetLastError() << std::endl;
-		return FALSE;
-	}
+		// ReadSize > 0x1000, need to read page by page
+		ULONG NumberOfPages = static_cast<ULONG>((ReadSize + 0xFFF) / 0x1000);
+		for (auto i{ 0u }; i < NumberOfPages; ++i)
+		{
+			PVOID pPhysicalAddress = VirtualToPhysical(reinterpret_cast<PUCHAR>(VirtualAddress) + i * 0x1000);
+			if (!pPhysicalAddress)
+			{
+				LOG("VirtualToPhysical failed!!!");
+				return FALSE;
+			}
 
-	RtlCopyMemory(ReadBuffer, pMappedAddress, ReadSize);
-	UnmapPhysicalMemory(pMappedAddress);
+			if (i != NumberOfPages - 1)
+			{
+				auto pMappedAddress = MapPhysicalMemory(pPhysicalAddress, 0x1000);
+				if (!pMappedAddress)
+				{
+					LOG("[-] Failed to map physical memory. Error code: %lu" << std::hex << GetLastError() << std::dec);
+					return FALSE;
+				}
+
+				RtlCopyMemory(reinterpret_cast<PUCHAR>(ReadBuffer) + i * 0x1000, pMappedAddress, 0x1000);
+				UnmapPhysicalMemory(pMappedAddress);
+			}
+			else
+			{
+				// Last page, calculate the remaining size
+				ULONG RemainingSize = static_cast<ULONG>(ReadSize - i * 0x1000);
+
+				auto pMappedAddress = MapPhysicalMemory(pPhysicalAddress, RemainingSize);
+				if (!pMappedAddress)
+				{
+					LOG("[-] Failed to map physical memory. Error code: %lu" << std::hex << GetLastError() << std::dec);
+					return FALSE;
+				}
+
+				RtlCopyMemory(reinterpret_cast<PUCHAR>(ReadBuffer) + i * 0x1000, pMappedAddress, RemainingSize);
+				UnmapPhysicalMemory(pMappedAddress);
+			}
+		}
+
+
+	}
 
 	return TRUE;
 }
@@ -46,31 +176,79 @@ CorMem::KernelWrite(
 	PVOID WriteBuffer, 
 	SIZE_T WriteSize)
 {
-	if (!VirtualAddress || !WriteBuffer || !WriteSize)
+	if (!VirtualAddress || !WriteBuffer || !WriteSize || !m_bInitialized)
 	{
-		std::cout << "[-] Invalid parameters for KernelWrite." << std::endl;
+		LOG("[-] Invalid parameters for KernelWrite.");
 		return FALSE;
 	}
 
-	PVOID pPhysicalAddress = VirtualToPhysical(VirtualAddress);
-	if (!pPhysicalAddress)
+	if (WriteSize <= 0x1000)
 	{
-		std::cout << "[-] Failed to translate virtual address to physical address." << std::endl;
-		return FALSE;
-	}
+		PVOID pPhysicalAddress = this->VirtualToPhysical(VirtualAddress);
+		if (!pPhysicalAddress)
+		{
 
-	auto pMappedAddress = MapPhysicalMemory(pPhysicalAddress, WriteSize);
-	if (!pMappedAddress)
+			LOG("[-] Failed to translate virtual address to physical address using MemoryMap.");
+			return FALSE;
+
+		}
+
+		auto pMappedAddress = MapPhysicalMemory(pPhysicalAddress, WriteSize);
+		if (!pMappedAddress)
+		{
+			LOG("[-] Failed to map physical memory.");
+			return FALSE;
+		}
+
+		RtlCopyMemory(pMappedAddress, WriteBuffer, WriteSize);
+		UnmapPhysicalMemory(pMappedAddress);
+	}
+	else
 	{
-		std::cout << "[-] Failed to map physical memory. Error code: " << GetLastError() << std::endl;
-		return FALSE;
-	}
+		// WriteSize > 0x1000
+		ULONG NumberOfPages = static_cast<ULONG>((WriteSize + 0xFFF) / 0x1000);
+		for (auto i{ 0u }; i < NumberOfPages; ++i)
+		{
+			PVOID pPhysicalAddress = VirtualToPhysical(reinterpret_cast<PUCHAR>(VirtualAddress) + i * 0x1000);
+			if (!pPhysicalAddress)
+			{
 
-	RtlCopyMemory(pMappedAddress, WriteBuffer, WriteSize);
-	UnmapPhysicalMemory(pMappedAddress);
+				LOG("[-] Failed to translate virtual address to physical address using MemoryMap.");
+				return FALSE;
+
+			}
+			if (i != NumberOfPages - 1)
+			{
+				auto pMappedAddress = MapPhysicalMemory(pPhysicalAddress, 0x1000);
+				if (!pMappedAddress)
+				{
+					LOG("[-] Failed to map physical memory.");
+					return FALSE;
+				}
+
+				RtlCopyMemory(pMappedAddress, reinterpret_cast<PUCHAR>(WriteBuffer) + i * 0x1000, 0x1000);
+				UnmapPhysicalMemory(pMappedAddress);
+			}
+			else
+			{
+				// Last page, calculate the remaining size
+				ULONG RemainingSize = static_cast<ULONG>(WriteSize - i * 0x1000);
+				auto pMappedAddress = MapPhysicalMemory(pPhysicalAddress, RemainingSize);
+				if (!pMappedAddress)
+				{
+					LOG("[-] Failed to map physical memory.");
+					return FALSE;
+				}
+
+				RtlCopyMemory(pMappedAddress, reinterpret_cast<PUCHAR>(WriteBuffer) + i * 0x1000, RemainingSize);
+				UnmapPhysicalMemory(pMappedAddress);
+			}
+		}
+	}
 
 	return TRUE;
 }
+
 
 PVOID
 CorMem::MapPhysicalMemory(
@@ -90,7 +268,7 @@ CorMem::MapPhysicalMemory(
 	PVOID pMappedAddress = nullptr;
 	DWORD dwBytesReturned = 0;
 
-	if (DeviceIoControl(m_hCorMem, 
+	if (DeviceIoControl(m_hDevice, 
 						IOCTL_MAP, 
 						&Request, 
 						sizeof(Request),
@@ -112,8 +290,15 @@ CorMem::UnmapPhysicalMemory(
 	{
 		return;
 	}
-
-	DeviceIoControl(m_hCorMem, IOCTL_UNMAP, &MappedAddress, sizeof(MappedAddress), nullptr, 0, nullptr, nullptr);
+	DWORD dwBytesReturned = 0;
+	DeviceIoControl(m_hDevice, 
+					IOCTL_UNMAP, 
+					&MappedAddress, 
+					sizeof(MappedAddress), 
+					nullptr, 
+					0, 
+					&dwBytesReturned, 
+					nullptr);
 }
 
 PVOID 
@@ -121,32 +306,39 @@ CorMem::VirtualToPhysical(PVOID VirtualAddress)
 {
 	if (!VirtualAddress)
 	{
-		std::cout << "[-] Invalid virtual address for translation." << std::endl;
+		LOG("[-] Invalid virtual address provided to VirtualToPhysical.");
 		return nullptr;
 	}
 
 	PVOID pPhysicalAddress = VirtualAddress;
-	DWORD returned = 0;
-	auto bRet = DeviceIoControl(m_hCorMem,
+	
+	DWORD dwBytesReturned = 0;
+	auto bRet = DeviceIoControl(m_hDevice,
 								IOCTL_V2P,
 								&pPhysicalAddress,
 								sizeof(pPhysicalAddress),
 								&pPhysicalAddress,
 								sizeof(pPhysicalAddress),
-								&returned,
+								&dwBytesReturned, 
 								nullptr);
 	if (!bRet)
 	{
-		std::cout << "[-] Failed to translate virtual address to physical address. Error code: " << GetLastError() << std::endl;
+		LOG("[-] Failed to translate virtual address to physical address. Error code: %lu") << GetLastError();
 		return nullptr;
 	}
-	else
-	{
-		if (!pPhysicalAddress)
-		{
-			std::cout << "[-] Translation returned a null physical address." << std::endl;
-			return nullptr;
-		}
-	}
+	
 	return pPhysicalAddress;
+}
+
+HANDLE CorMem::CreateDevice(const char* DeviceName)
+{
+	m_hDevice = CreateFileA(DeviceName,
+							GENERIC_READ | GENERIC_WRITE,
+							0,
+							nullptr,
+							OPEN_EXISTING,
+							FILE_ATTRIBUTE_NORMAL,
+							nullptr);
+
+	return m_hDevice;
 }

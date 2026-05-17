@@ -36,6 +36,24 @@
     <ClInclude Include="resource.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="BiosToolCommonDriver.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="BiosToolCommonDriverBin.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CorMemBin.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="DriverLoader.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="DriverProvider.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Singleton.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CorMem.cpp">
@@ -51,6 +69,18 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Utils.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="BiosToolCommonDriver.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DriverLoader.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DriverProvider.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Singleton.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

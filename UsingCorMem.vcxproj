@@ -129,19 +129,29 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="BiosToolCommonDriver.h" />
+    <ClInclude Include="BiosToolCommonDriverBin.hpp" />
     <ClInclude Include="CorMem.h" />
+    <ClInclude Include="CorMemBin.hpp" />
+    <ClInclude Include="DriverLoader.h" />
+    <ClInclude Include="DriverProvider.hpp" />
     <ClInclude Include="DriverService.hpp" />
     <ClInclude Include="FileUtils.hpp" />
     <ClInclude Include="Log.hpp" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Resource.hpp" />
+    <ClInclude Include="Singleton.hpp" />
     <ClInclude Include="Utils.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="BiosToolCommonDriver.cpp" />
     <ClCompile Include="CorMem.cpp" />
+    <ClCompile Include="DriverLoader.cpp" />
+    <ClCompile Include="DriverProvider.cpp" />
     <ClCompile Include="DriverService.cpp" />
     <ClCompile Include="FileUtils.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Singleton.cpp" />
     <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
