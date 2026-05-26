@@ -36,7 +36,7 @@ private:
 private:
 	HANDLE			m_hDevice{ INVALID_HANDLE_VALUE };
 	BOOLEAN			m_bInitialized{ FALSE };
-	DriverService* m_pDriverService{ nullptr };
+	DriverService*  m_pDriverService{ nullptr };
 };
 
 

