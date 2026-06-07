@@ -96,6 +96,12 @@
     <ClInclude Include="BYOVD\PGRHostControlBin.hpp">
       <Filter>BYOVD</Filter>
     </ClInclude>
+    <ClInclude Include="BYOVD\GGProtect64.h">
+      <Filter>BYOVD</Filter>
+    </ClInclude>
+    <ClInclude Include="BYOVD\GGProtect64Bin.hpp">
+      <Filter>BYOVD</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -138,6 +144,9 @@
       <Filter>Utils</Filter>
     </ClCompile>
     <ClCompile Include="BYOVD\PGRHostControl.cpp">
+      <Filter>BYOVD</Filter>
+    </ClCompile>
+    <ClCompile Include="BYOVD\GGProtect64.cpp">
       <Filter>BYOVD</Filter>
     </ClCompile>
   </ItemGroup>
