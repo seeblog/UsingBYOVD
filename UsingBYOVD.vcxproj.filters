@@ -132,6 +132,12 @@
     <ClInclude Include="BYOVD\WinMsrDevBin.hpp">
       <Filter>BYOVD</Filter>
     </ClInclude>
+    <ClInclude Include="BYOVD\Ardrv.h">
+      <Filter>BYOVD</Filter>
+    </ClInclude>
+    <ClInclude Include="BYOVD\ArdrvBin.hpp">
+      <Filter>BYOVD</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -189,6 +195,9 @@
       <Filter>Syscalls</Filter>
     </ClCompile>
     <ClCompile Include="BYOVD\WinMsrDev.cpp">
+      <Filter>BYOVD</Filter>
+    </ClCompile>
+    <ClCompile Include="BYOVD\Ardrv.cpp">
       <Filter>BYOVD</Filter>
     </ClCompile>
   </ItemGroup>

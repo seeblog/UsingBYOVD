@@ -67,3 +67,15 @@ dmp file
 使用了[SysWhispers4](https://github.com/JoasASantos/SysWhispers4)加入到了本项目
 
 Special thanks to the author of [SysWhispers4](https://github.com/JoasASantos/SysWhispers4) for sharing this project.
+
+## BYOVD
+
+**Killer**
+
+
+| DeviceName | SHA256 | IOCTL CODE |
+| :---: | :---: | :---: |
+| ardrv| 07c5209bf83065fe760f4fee4ed2308b0c523671f68ca73a3854c2c8c28c0541 | 0x2420031 |
+| BootRepair| 5ab36c116767eaae53a466fbc2dae7cfd608ed77721f65e83312037fbd57c946 | 0x222014 |
+| ProcessCtr| d64eeb940daffdc8327fb18b160c20e539088cf8407813655f59efa9fdf0022e | 0x89DB202C |
+| GGProtect64| 0aa69aee93c6be9bc82680a7df99c114591038ae02e6666fc6e42acb09643111 | 0x223C04 |

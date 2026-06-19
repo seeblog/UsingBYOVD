@@ -8,10 +8,12 @@
 #include "BiosToolCommonDriver.h"
 #include "WinMsrDev.h"
 
+
 // Killer
 #include "BootRepair.h"
 #include "ProcessCtr.h"
 #include "GGProtect64.h"
+#include "Ardrv.h"
 
 namespace KillerSelector
 {
@@ -19,12 +21,14 @@ namespace KillerSelector
 	{
 		BootRepair,
 		ProcessCtr,
-		GGProtect64
+		GGProtect64,
+		Ardrv
 	};
 	static std::any Killers[] = {
 		std::any(std::addressof(BootRepair::Instance())),
 		std::any(std::addressof(ProcessCtr::Instance())),
-		std::any(std::addressof(GGProtect64::Instance()))
+		std::any(std::addressof(GGProtect64::Instance())),
+		std::any(std::addressof(Ardrv::Instance()))
 
 	};
 	template <KillerType _Type>
@@ -49,6 +53,12 @@ namespace KillerSelector
 	{
 		using Type = std::add_pointer_t<GGProtect64>;
 	};
+	
+	template <>
+	struct GetKillerImpl<KillerType::Ardrv>
+	{
+		using Type = std::add_pointer_t<Ardrv>;
+	};
 
 	template <KillerType _Type>
 	auto GetKiller()
@@ -60,7 +70,7 @@ namespace KillerSelector
 using KillerType = KillerSelector::KillerType;
 using KillerSelector::GetKiller;
 
-#define		_KILL_PROVIDER KillerType::ProcessCtr
+#define		_KILL_PROVIDER KillerType::Ardrv
 #define		CurrentKiller() GetKiller<_KILL_PROVIDER>()
 
 
