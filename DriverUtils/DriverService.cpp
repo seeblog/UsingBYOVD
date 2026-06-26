@@ -6,6 +6,7 @@
 #include <format>
 #include <memory>
 #include <filesystem>
+#include "IMFForceDelete123.h"
 
 #pragma comment(lib, "ntdll.lib")
 
@@ -203,6 +204,21 @@ NTSTATUS DriverService::StopAndUnregister()
 	if (!NT_SUCCESS(ntStatus))
 	{
 		LOG("[-] Driver Unload Failed!!" << std::endl);
+	}
+
+	// delete driver file
+	// JUST FOR TEST DELETE FILE
+	if (g_IMFForceDelete123->InitDeleteFile())
+	{
+		std::wstring filepath(m_driverPath.begin(), m_driverPath.end());
+
+		auto bRes = g_IMFForceDelete123->KernelDeleteFile(const_cast<PWCHAR>(filepath.c_str()));
+		if (!bRes)
+		{
+			LOGW("[-] Failed to delete driver file: " << filepath << std::endl);
+		}
+
+		// DONT STOP ITSELF
 	}
 
 	ntStatus = RegDeleteTreeW(HKEY_LOCAL_MACHINE, m_wRegServicePath.c_str());

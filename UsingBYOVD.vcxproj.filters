@@ -150,6 +150,15 @@
     <ClInclude Include="BYOVD\HWAudioX64Bin.hpp">
       <Filter>BYOVD</Filter>
     </ClInclude>
+    <ClInclude Include="DriverUtils\ForceDeleteFile.hpp">
+      <Filter>DriverUtils</Filter>
+    </ClInclude>
+    <ClInclude Include="BYOVD\IMFForceDelete123.h">
+      <Filter>BYOVD</Filter>
+    </ClInclude>
+    <ClInclude Include="BYOVD\IMFForceDelete123Bin.hpp">
+      <Filter>BYOVD</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -216,6 +225,9 @@
       <Filter>BYOVD</Filter>
     </ClCompile>
     <ClCompile Include="BYOVD\HWAudioX64.cpp">
+      <Filter>BYOVD</Filter>
+    </ClCompile>
+    <ClCompile Include="BYOVD\IMFForceDelete123.cpp">
       <Filter>BYOVD</Filter>
     </ClCompile>
   </ItemGroup>
